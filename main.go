@@ -5,6 +5,7 @@ import (
 	"flag"
 
 	"github.com/fulltimegodev/hotel-reservation/api"
+	"github.com/fulltimegodev/hotel-reservation/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,16 +16,18 @@ const dbname = "hotel-reservation"
 const userColl = "users"
 
 func main() {
+	// flags
+	port := flag.String("port", "3333", "The listen address of the API server")
+	flag.Parse()
+
+	// database
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dburi))
 	if err != nil {
 		panic(err)
 	}
-	ctx := context.Background()
-	coll := client.Database(dbname).Collection(userColl)
-	coll.InsertOne(ctx, map[string]string{"name": "John Doe"})
 
-	// flags
-	port := flag.String("port", ":3333", "The listen address of the API server")
+	// handlers init
+	userHandler := api.NewUserHandler(db.NewMongoUserStore(client))
 
 	// versioning
 	app := fiber.New()
@@ -32,11 +35,11 @@ func main() {
 
 	// routes
 	app.Get("/foo", handleFoo)
-	apiv1.Get("/user", api.HandleGetUsers)
-	apiv1.Get("/user/:id", api.HandleGetUser)
+	apiv1.Get("/user", userHandler.HandleGetUsers)
+	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 
 	// init
-	app.Listen(*port)
+	app.Listen(":" + *port)
 }
 
 func handleFoo(c *fiber.Ctx) error {
