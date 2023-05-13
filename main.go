@@ -42,6 +42,7 @@ func main() {
 	// routes
 	apiv1.Get("/users/:id", userHandler.HandleGetUser)
 	apiv1.Get("/users", userHandler.HandleGetUsers)
+	apiv1.Post("/users", userHandler.HandlePostUser)
 
 	// init
 	app.Listen(":" + *port)
